@@ -3,21 +3,21 @@ const ghostBookshelf = require('./base');
 const Member = ghostBookshelf.Model.extend({
     tableName: 'members',
 
-    relationships: ['stripe_customers'],
-    relationshipBelongsTo: {
-        stripe_customers: 'members_stripe_customers'
+    emitChange: function emitChange(event, options) {
+        const eventToTrigger = 'member' + '.' + event;
+        ghostBookshelf.Model.prototype.emitChange.bind(this)(this, eventToTrigger, options);
     },
 
-    permittedAttributes(...args) {
-        return ghostBookshelf.Model.prototype.permittedAttributes.apply(this, args).concat(this.relationships);
+    onCreated: function onCreated(model, attrs, options) {
+        ghostBookshelf.Model.prototype.onCreated.apply(this, arguments);
+
+        model.emitChange('added', options);
     },
 
-    stripe_customers() {
-        return this.hasMany('MemberStripeCustomer', 'member_id');
-    }
-}, {
-    permittedOptions(...args) {
-        return ghostBookshelf.Model.permittedOptions.apply(this, args).concat(['withRelated']);
+    onDestroyed: function onDestroyed(model, options) {
+        ghostBookshelf.Model.prototype.onDestroyed.apply(this, arguments);
+
+        model.emitChange('deleted', options);
     }
 });
 

@@ -1,3 +1,5 @@
+const readingMinutes = require('@tryghost/helpers').utils.readingMinutes;
+
 module.exports.forPost = (frame, model, attrs) => {
     const _ = require('lodash');
 
@@ -15,9 +17,21 @@ module.exports.forPost = (frame, model, attrs) => {
             attrs.excerpt = attrs.custom_excerpt;
         }
     }
+
+    if (!Object.prototype.hasOwnProperty.call(frame.options, 'columns') ||
+    (frame.options.columns.includes('reading_time'))) {
+        if (attrs.html) {
+            let additionalImages = 0;
+
+            if (attrs.feature_image) {
+                additionalImages += 1;
+            }
+
+            attrs.reading_time = readingMinutes(attrs.html, additionalImages);
+        }
+    }
 };
 
-// @NOTE: ghost_head & ghost_foot are deprecated, remove in Ghost 3.0
 module.exports.forSettings = (attrs, frame) => {
     const _ = require('lodash');
 
@@ -26,14 +40,6 @@ module.exports.forSettings = (attrs, frame) => {
     if (_.isArray(attrs)) {
         // CASE: read single setting
         if (frame.original.params && frame.original.params.key) {
-            if (frame.original.params.key === 'ghost_head') {
-                return;
-            }
-
-            if (frame.original.params.key === 'ghost_foot') {
-                return;
-            }
-
             if (frame.original.params.key === 'codeinjection_head') {
                 attrs[0].key = 'codeinjection_head';
                 return;
